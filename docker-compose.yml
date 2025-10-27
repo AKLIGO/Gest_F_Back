@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: akligo
+      MYSQL_DATABASE: auth_DB
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - SOUTENANCE_NETWORK
+    restart: unless-stopped
+
+  mail-dev:
+    container_name: mail-dev_2
+    image: maildev/maildev
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+    networks:
+      - SOUTENANCE_NETWORK
+    restart: unless-stopped
+
+networks:
+  SOUTENANCE_NETWORK:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
