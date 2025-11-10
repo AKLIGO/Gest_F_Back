@@ -64,5 +64,19 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>{
     // Nouvelles méthodes pour le filtrage par propriétaire
     List<Reservation> findByAppartementProprietaireId(Long proprietaireId);
     List<Reservation> findByVehiculeProprietaireId(Long proprietaireId);
+    List<Reservation> findByUtilisateurId(Long utilisateur);
     List<Reservation> findByAppartementProprietaireIdOrVehiculeProprietaireId(Long appartementProprietaireId, Long vehiculeProprietaireId);
+
+    // 🔹 Liste des réservations d'appartements d'un utilisateur
+    List<Reservation> findByUtilisateur_IdAndAppartementIsNotNull(Long utilisateurId);
+    // Récupère toutes les réservations véhicules d’un utilisateur
+    List<Reservation> findByUtilisateurAndVehiculeIsNotNull(Utilisateurs utilisateur);
+    // 🔹 Liste des réservations de véhicules d'un utilisateur
+    List<Reservation> findByUtilisateur_IdAndVehiculeIsNotNull(Long utilisateurId);
+
+    // 🔹 Optionnel : toutes les réservations d'un utilisateur
+    //List<Reservation> findByUtilisateur(Utilisateurs utilisateur);
+
+    // 🔹 Optionnel : filtrer par statut ou type
+    //List<Reservation> findByUtilisateurAndStatut(Utilisateurs utilisateur, StatutDeReservation statut);
 }

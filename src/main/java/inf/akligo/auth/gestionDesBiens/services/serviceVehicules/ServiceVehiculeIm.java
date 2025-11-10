@@ -9,6 +9,7 @@ import inf.akligo.auth.gestionDesBiens.repository.VehiculeRepository;
 import inf.akligo.auth.gestionDesBiens.requests.VehiculeDTO;
 import inf.akligo.auth.gestionDesBiens.requests.ImageDTOVeh;
 import org.springframework.stereotype.Service;
+import inf.akligo.auth.authConfiguration.repository.RoleRepository;
 import inf.akligo.auth.gestionDesBiens.services.serviceVehicules.ServiceVehicule;
 import inf.akligo.auth.gestionDesBiens.enumerateurs.StatutVehicule;
 import inf.akligo.auth.gestionDesBiens.enumerateurs.TypeVehicule;
@@ -31,7 +32,7 @@ public class ServiceVehiculeIm implements ServiceVehicule{
 
     private final VehiculeRepository vehiculeRepository;
     private final UtilisateurRepository utilisateurRepository;
-
+    private final RoleRepository roleRepository;
     @Override
     @Transactional
     public Vehicules addVehicules(Vehicules vehicules){
@@ -123,7 +124,7 @@ public class ServiceVehiculeIm implements ServiceVehicule{
      @Override
      @Transactional(readOnly = true)
      public List<VehiculeDTO> getAllVehiculesDTO() {
-        List<Vehicules> vehicules = vehiculeRepository.findAll();
+        List<Vehicules> vehicules = vehiculeRepository.findByPublieTrue();
         System.out.println("Nombre de véhicules récupérés : " + vehicules.size());
     
         if (vehicules == null) {
@@ -226,7 +227,13 @@ public List<VehiculeDTO> getVehiculesByCurrentUser() {
     return getVehiculesByProprietaire(proprietaire.getId());
 }
 
-   
+@Override
+    public Vehicules autoriserAffichage(Long id, boolean publie) {
+        Vehicules vehicule = vehiculeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Véhicule non trouvé"));
+        vehicule.setPublie(publie);
+        return vehiculeRepository.save(vehicule);
+        }   
 
 
 }

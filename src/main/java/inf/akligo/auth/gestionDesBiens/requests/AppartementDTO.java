@@ -30,6 +30,7 @@ public class AppartementDTO {
     private StatutAppartement statut; // Utiliser l'enum
     private LocalDateTime createdAt;
     private LocalDateTime lastModifiedDate;
+    private String localisation;
     private List<ImageDTO> images; // Liste des images
 
     // Vous pouvez ajouter d'autres méthodes si nécessaire

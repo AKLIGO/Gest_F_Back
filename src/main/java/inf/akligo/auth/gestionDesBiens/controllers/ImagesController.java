@@ -9,6 +9,8 @@ import inf.akligo.auth.gestionDesBiens.entity.Vehicules;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import inf.akligo.auth.authConfiguration.entity.Utilisateurs;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
@@ -213,5 +215,35 @@ public class ImagesController{
         serviceImage.deleteImageApp(id);
         return ResponseEntity.noContent().build();
     }
+
+      // 1️⃣ Récupérer les images de l'utilisateur connecté
+    @GetMapping("/me/appartements")
+    public ResponseEntity<List<ImageDtoApp>> getImagesAppartementsByConnectedUser(Authentication authentication) {
+        String email = authentication.getName();
+        List<ImageDtoApp> images = serviceImage.getImagesAppartementsByConnectedUser(email);
+        return ResponseEntity.ok(images);
+    }
+
+    @GetMapping("/me/vehicules")
+    public ResponseEntity<List<ImageDTOVeh>> getImagesVehiculesByConnectedUser(Authentication authentication) {
+        String email = authentication.getName();
+        List<ImageDTOVeh> images = serviceImage.getImagesVehiculesByConnectedUser(email);
+        return ResponseEntity.ok(images);
+    }
+
+        // 2️⃣ Récupérer les images d’un propriétaire spécifique
+    @GetMapping("/appartements/{proprietaireId}")
+    public ResponseEntity<List<ImageDtoApp>> getImagesAppartementsByProprietaire(@PathVariable Long proprietaireId) {
+        List<ImageDtoApp> images = serviceImage.getImagesAppartementsByProprietaire(proprietaireId);
+        return ResponseEntity.ok(images);
+    }
+
+    @GetMapping("/vehicules/{proprietaireId}")
+    public ResponseEntity<List<ImageDTOVeh>> getImagesVehiculesByProprietaire(@PathVariable Long proprietaireId) {
+        List<ImageDTOVeh> images = serviceImage.getImagesVehiculesByProprietaire(proprietaireId);
+        return ResponseEntity.ok(images);
+    }
+
+
 
 }

@@ -110,5 +110,11 @@ public class AppartementController {
         }
     }
 
+    @PutMapping("/{id}/publication")
+    public ResponseEntity<Appartement> publierAppartement(@PathVariable Long id, @RequestParam boolean publie) {
+        Appartement updated = serviceApp.autoriserAffichage(id, publie);
+        return ResponseEntity.ok(updated);
+    }
+
 
 }

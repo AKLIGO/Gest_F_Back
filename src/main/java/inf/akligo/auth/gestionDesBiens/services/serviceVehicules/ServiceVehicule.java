@@ -24,4 +24,6 @@ public interface ServiceVehicule{
     List<VehiculeDTO> getVehiculesByProprietaire(Long proprietaireId);
     List<VehiculeDTO> getVehiculesByCurrentUser();
 
+    Vehicules autoriserAffichage(Long id, boolean publie);
+
 }

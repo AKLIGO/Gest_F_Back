@@ -63,6 +63,8 @@ public class Vehicules{
     private StatutVehicule statut;
     private TypeVehicule type; 
 
+    @Builder.Default
+    private boolean publie = false;
 
     @OneToMany(mappedBy = "vehicule", cascade = CascadeType.ALL, orphanRemoval = true,fetch =FetchType.EAGER)
     @JsonManagedReference("vehicule-images")

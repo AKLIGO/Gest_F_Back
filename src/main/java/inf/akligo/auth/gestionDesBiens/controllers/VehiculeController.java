@@ -113,4 +113,10 @@ public class VehiculeController {
             return ResponseEntity.status(500).build();
         }
     }
+
+    @PutMapping("/{id}/publication")
+    public ResponseEntity<Vehicules> publierVehicule(@PathVariable Long id, @RequestParam boolean publie) {
+        Vehicules updated = serviceVehicule.autoriserAffichage(id, publie);
+        return ResponseEntity.ok(updated);
+    }
 }

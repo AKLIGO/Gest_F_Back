@@ -63,12 +63,29 @@ public class ReservationVehiculeController {
     @GetMapping("/mes-reservations-vehicules")
     public ResponseEntity<List<ReservationResponseVehi>> getMyReservationsVehicules() {
         try {
-            List<ReservationResponseVehi> reservations = serviceReservation.getReservationsVehiculesByCurrentUser();
+            List<ReservationResponseVehi> reservations = serviceReservation.getReservationsVehiculesByCurrentUserP();
             System.out.println("Récupération de " + reservations.size() + " réservations de véhicules pour l'utilisateur connecté");
             return ResponseEntity.ok(reservations);
         } catch (Exception e) {
             System.err.println("Erreur lors de la récupération des réservations de véhicules de l'utilisateur connecté: " + e.getMessage());
             return ResponseEntity.status(500).build();
         }
+    }
+
+    // 🔹 Réservations véhicules d’un utilisateur par ID
+    @GetMapping("/vehicules/user/{userId}")
+    public List<ReservationResponseVehi> getReservationsVehiculesByUser(@PathVariable Long userId) {
+        return serviceReservation.getReservationsVehiculesByUser(userId);
+    }
+
+    // 🔹 Réservations véhicules de l’utilisateur connecté
+    @GetMapping("/vehicules/me")
+    public List<ReservationResponseVehi> getReservationsVehiculesCurrentUser() {
+        return serviceReservation.getReservationsVehiculesByCurrentUser();
+    }
+
+    @GetMapping("/vehicules/mes")
+    public List<ReservationResponseVehi> getReservationsVehiculesCurrentUserP() {
+        return serviceReservation.getReservationsVehiculesByCurrentUser();
     }
 }

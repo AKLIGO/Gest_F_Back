@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import inf.akligo.auth.gestionDesBiens.entity.Vehicules;
+import inf.akligo.auth.authConfiguration.entity.Roles;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,7 @@ import inf.akligo.auth.authConfiguration.entity.Utilisateurs;
 import java.io.IOException;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationRequest;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseDTO;
-
+import inf.akligo.auth.authConfiguration.repository.RoleRepository;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationRequestVehi;
 // import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseVehi;
 
@@ -41,6 +42,7 @@ public class ServiceReservation{
     private final AppartementRepository appartementRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final VehiculeRepository vehiculeRepository;
+    private final RoleRepository roleRepository;
 
 
     @Transactional
@@ -55,7 +57,8 @@ public class ServiceReservation{
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
         
        
-
+        // s'assurer que l'utilisateur a le role connecter
+        ensureClientRole(utilisateur);
 
 
         // Vérifier si l’appartement existe
@@ -95,6 +98,20 @@ public class ServiceReservation{
     
     
     }
+
+    private void ensureClientRole(Utilisateurs utilisateur) {
+            boolean hasClientRole = utilisateur.getRoles() != null && utilisateur.getRoles().stream()
+                    .anyMatch(r -> "CLIENT".equalsIgnoreCase(r.getName()));
+            if (!hasClientRole) {
+                Roles clientRole = roleRepository.findByName("CLIENT")
+                        .orElseThrow(() -> new RuntimeException("Role CLIENT non trouvé"));
+                if (utilisateur.getRoles() == null) {
+                    utilisateur.setRoles(new java.util.ArrayList<>());
+                }
+                utilisateur.getRoles().add(clientRole);
+                utilisateurRepository.save(utilisateur);
+       }
+}
 
     @Transactional
 public ReservationResponseDTO updateReservationStatus(Long reservationId, String nouveauStatutStr) {
@@ -141,6 +158,8 @@ public ReservationResponseVehi createReservationVehicule(ReservationRequestVehi 
     // 👤 Récupérer l'utilisateur connecté
     Utilisateurs utilisateur = utilisateurRepository.findByEmail(username)
             .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        ensureClientRole(utilisateur);
 
     // 🚗 Récupérer le véhicule
     Vehicules vehicule = vehiculeRepository.findById(request.getVehiculeId())
@@ -336,7 +355,8 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
         public List<ReservationResponseDTO> getReservationsByProprietaire(Long proprietaireId) {
             System.out.println("Récupération des réservations pour le propriétaire ID: " + proprietaireId);
             
-            List<Reservation> reservations = reservationRepository.findByAppartementProprietaireIdOrVehiculeProprietaireId(proprietaireId, proprietaireId);
+            //List<Reservation> reservations = reservationRepository.findByAppartementProprietaireIdOrVehiculeProprietaireId(proprietaireId, proprietaireId);
+            List<Reservation> reservations = reservationRepository.findByAppartementProprietaireId(proprietaireId);
             System.out.println("Nombre de réservations trouvées pour le propriétaire " + proprietaireId + ": " + reservations.size());
             
             return reservations.stream()
@@ -424,17 +444,103 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
          * Récupère les réservations de véhicules du propriétaire connecté
          * @return Liste des réservations de véhicules du propriétaire connecté
          */
-        public List<ReservationResponseVehi> getReservationsVehiculesByCurrentUser() {
+        public List<ReservationResponseVehi> getReservationsVehiculesByCurrentUserP() {
             // 🔐 Récupérer l'utilisateur connecté via le token
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-            System.out.println("Récupération des réservations de véhicules pour l'utilisateur connecté: " + username);
+           Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+           String username = authentication.getName();
+           System.out.println("Récupération des réservations de véhicules pour l'utilisateur connecté: " + username);
 
             // 👤 Récupérer l'utilisateur dans la base
-            Utilisateurs proprietaire = utilisateurRepository.findByEmail(username)
-                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+           Utilisateurs proprietaire = utilisateurRepository.findByEmail(username)
+                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
             return getReservationsVehiculesByProprietaire(proprietaire.getId());
+       }
+
+        // 🔹 Récupérer l'utilisateur connecté
+        private Utilisateurs getCurrentUser() {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            return utilisateurRepository.findByEmail(username)
+                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
         }
+
+    // 🔹 Réservations véhicules du user connecté
+    public List<ReservationResponseVehi> getReservationsVehiculesByCurrentUser() {
+        Utilisateurs user = getCurrentUser();
+        return reservationRepository.findByUtilisateur_IdAndVehiculeIsNotNull(user.getId())
+                .stream()
+                .map(res -> ReservationResponseVehi.builder()
+                        .id(res.getId())
+                        .dateDebut(res.getDateDebut())
+                        .dateFin(res.getDateFin())
+                        .vehiculeMarque(res.getVehicule() != null ? res.getVehicule().getMarque() : null)
+                        .vehiculeImmatriculation(res.getVehicule() != null ? res.getVehicule().getImmatriculation() : null)
+                        .utilisateurNom(user.getNom())
+                        .utilisateurPrenoms(user.getPrenoms())
+                        .statut(res.getStatut() != null ? res.getStatut().name() : null)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    // 🔹 Réservations véhicules par utilisateur
+    public List<ReservationResponseVehi> getReservationsVehiculesByUser(Long utilisateurId) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+        List<Reservation> reservations = reservationRepository.findByUtilisateur_IdAndVehiculeIsNotNull(utilisateurId);
+
+        return reservations.stream()
+                .map(reservation -> ReservationResponseVehi.builder()
+                        .id(reservation.getId())
+                        .dateDebut(reservation.getDateDebut())
+                        .dateFin(reservation.getDateFin())
+                        .vehiculeMarque(reservation.getVehicule() != null ? reservation.getVehicule().getMarque() : null)
+                        .vehiculeImmatriculation(reservation.getVehicule() != null ? reservation.getVehicule().getImmatriculation() : null)
+                        .utilisateurNom(reservation.getUtilisateur() != null ? reservation.getUtilisateur().getNom() : null)
+                        .utilisateurPrenoms(reservation.getUtilisateur() != null ? reservation.getUtilisateur().getPrenoms() : null)
+                        .statut(reservation.getStatut() != null ? reservation.getStatut().name() : null)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    // 🔹 Réservations appartements du user connecté
+    public List<ReservationResponseDTO> getReservationsAppartementsByCurrentUser() {
+        Utilisateurs user = getCurrentUser();
+        return reservationRepository.findByUtilisateur_IdAndAppartementIsNotNull(user.getId())
+                .stream()
+                .map(res -> ReservationResponseDTO.builder()
+                        .id(res.getId())
+                        .dateDebut(res.getDateDebut())
+                        .dateFin(res.getDateFin())
+                        .montant(res.getMontant())
+                        .appartementNom(res.getAppartement() != null ? res.getAppartement().getNom() : null)
+                        .appartementAdresse(res.getAppartement() != null ? res.getAppartement().getAdresse() : null)
+                        .utilisateurNom(user.getNom())
+                        .utilisateurPrenoms(user.getPrenoms())
+                        .statut(res.getStatut() != null ? res.getStatut().name() : null)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    // 🔹 Réservations appartements par utilisateur (ID)
+    public List<ReservationResponseDTO> getReservationsAppartementsByUser(Long utilisateurId) {
+        return reservationRepository.findByUtilisateur_IdAndAppartementIsNotNull(utilisateurId)
+                .stream()
+                .map(res -> ReservationResponseDTO.builder()
+                        .id(res.getId())
+                        .dateDebut(res.getDateDebut())
+                        .dateFin(res.getDateFin())
+                        .montant(res.getMontant())
+                        .appartementNom(res.getAppartement() != null ? res.getAppartement().getNom() : null)
+                        .appartementAdresse(res.getAppartement() != null ? res.getAppartement().getAdresse() : null)
+                        .utilisateurNom(res.getUtilisateur() != null ? res.getUtilisateur().getNom() : null)
+                        .utilisateurPrenoms(res.getUtilisateur() != null ? res.getUtilisateur().getPrenoms() : null)
+                        .statut(res.getStatut() != null ? res.getStatut().name() : null)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+
 
 }

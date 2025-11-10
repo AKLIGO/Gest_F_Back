@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.http.ResponseEntity;
 import inf.akligo.auth.securityConfig.security.BlackListTokenSevice;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.PutMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import inf.akligo.auth.authConfiguration.datas.UserDto;
@@ -87,7 +89,9 @@ public class UserController{
         serviceCompteImpl.supprimerUtilisateurParId(id);
     }
 
+    // @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(path="/modifierUtilisateur/{id}")
+    
     public Utilisateurs modifierUtilisateur( @RequestBody Utilisateurs utilisateurDetails,
     @PathVariable Long id){
         return serviceCompteImpl.modifierUtilisateur(utilisateurDetails,id);

@@ -4,11 +4,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-
+import inf.akligo.auth.authConfiguration.entity.Utilisateurs;
 import inf.akligo.auth.gestionDesBiens.entity.Images;
 import inf.akligo.auth.gestionDesBiens.entity.Appartement;
 import inf.akligo.auth.gestionDesBiens.entity.Vehicules;
-
+import inf.akligo.auth.authConfiguration.repository.UtilisateurRepository;
 import inf.akligo.auth.gestionDesBiens.requests.ImageDtoApp;
 import inf.akligo.auth.gestionDesBiens.requests.ImageDTOVeh;
 
@@ -35,6 +35,7 @@ public class ServiceImage {
     private final ImageRepository imagesRepository;
     private final AppartementRepository appartementsRepository;
     private final VehiculeRepository vehiculeRepository;
+    private final UtilisateurRepository utilisateurRepository;
 
     private static final String UPLOAD_DIR = "uploads/images/";
 
@@ -315,4 +316,48 @@ private ImageDtoApp convertToAppDTO(Images img) {
         imagesRepository.deleteById(id);
     }
 
+    // 1️⃣ Récupérer les images des appartements du propriétaire connecté
+
+     public List<ImageDtoApp> getImagesAppartementsByConnectedUser(String email) {
+        Utilisateurs proprietaire = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        return imagesRepository.findByAppartementProprietaire(proprietaire).stream()
+                .map(this::convertToAppDTO)
+                .collect(Collectors.toList());
+    }
+
+
+    // 1️⃣ Récupérer les images des véhicules du propriétaire connecté
+
+    public List<ImageDTOVeh> getImagesVehiculesByConnectedUser(String email) {
+        Utilisateurs proprietaire = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        return imagesRepository.findByVehiculeProprietaire(proprietaire).stream()
+                .map(this::convertToVehiculeDTO)
+                .collect(Collectors.toList());
+    }
+
+
+    // 2️⃣ Récupérer les images par propriétaire spécifique
+
+       public List<ImageDtoApp> getImagesAppartementsByProprietaire(Long proprietaireId) {
+        Utilisateurs proprietaire = utilisateurRepository.findById(proprietaireId)
+                .orElseThrow(() -> new RuntimeException("Propriétaire non trouvé"));
+
+        return imagesRepository.findByAppartementProprietaire(proprietaire).stream()
+                .map(this::convertToAppDTO)
+                .collect(Collectors.toList());
+    }
+
+    
+    public List<ImageDTOVeh> getImagesVehiculesByProprietaire(Long proprietaireId) {
+        Utilisateurs proprietaire = utilisateurRepository.findById(proprietaireId)
+                .orElseThrow(() -> new RuntimeException("Propriétaire non trouvé"));
+
+        return imagesRepository.findByVehiculeProprietaire(proprietaire).stream()
+                .map(this::convertToVehiculeDTO)
+                .collect(Collectors.toList());
+    }
     }

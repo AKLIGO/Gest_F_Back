@@ -13,6 +13,8 @@ public interface AppartementRepository extends JpaRepository<Appartement, Long>{
     List<Appartement> findByProprietaireId(Long proprietaireId);
     Optional<Appartement> findByIdAndStatut(Long id, StatutAppartement statut);
     Optional<Appartement> findByNom(String nom);
+    List<Appartement> findByPublieTrue();
+    
 
 
 }

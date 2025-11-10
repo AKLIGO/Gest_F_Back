@@ -66,6 +66,7 @@ public class ServiceAppImpl implements ServiceApp{
             appartement.setNbrDePieces(appartementUpd.getNbrDePieces());
             appartement.setDescription(appartementUpd.getDescription());
             appartement.setStatut(appartementUpd.getStatut());
+            appartement.setLocalisation(appartementUpd.getLocalisation());
             appartement.setType(appartementUpd.getType());
 
             return appartementRepository.save(appartement);
@@ -130,7 +131,7 @@ public class ServiceAppImpl implements ServiceApp{
 
 @Override
 public List<AppartementDTO> getAllAppartementsDTO() {
-    List<Appartement> appartements = appartementRepository.findAll();
+    List<Appartement> appartements = appartementRepository.findByPublieTrue();
     System.out.println("Nombre d'appartements récupérés : " + appartements.size());
     if (appartements == null) {
         appartements = new ArrayList<>();
@@ -226,12 +227,19 @@ public AppartementDTO convertToDTO(Appartement appartement) {
             .type(appartement.getType())
             .statut(appartement.getStatut())
             .createdAt(appartement.getCreatedAt())
+            .localisation(appartement.getLocalisation())
             .lastModifiedDate(appartement.getLastModifiedDate())
             .images(imageDto)
             .build();
 }
 
-
+@Override
+public Appartement autoriserAffichage(Long id, boolean publie) {
+        Appartement appartement = appartementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appartement non trouvé"));
+        appartement.setPublie(publie);
+        return appartementRepository.save(appartement);
+    }
    
 
 }

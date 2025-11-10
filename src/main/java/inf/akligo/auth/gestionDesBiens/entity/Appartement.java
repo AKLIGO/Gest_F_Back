@@ -60,6 +60,10 @@ public class Appartement{
     private int nbrDePieces;
     private String description;
     private double prix;
+    private String localisation;
+
+    @Builder.Default
+    private boolean publie = false;
 
     @Enumerated(EnumType.STRING)
     private TypeAppartement type;

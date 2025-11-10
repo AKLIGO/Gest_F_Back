@@ -18,6 +18,8 @@ public interface ServiceApp{
     List<AppartementDTO> getAllAppartementsDTO();
     public boolean isDiponible(Long appartementId);
     public Appartement getAppartementById(Long id);
+
+    Appartement autoriserAffichage(Long id, boolean publie);
     
     // Nouvelles méthodes pour le filtrage par propriétaire
     List<AppartementDTO> getAppartementsByProprietaire(Long proprietaireId);

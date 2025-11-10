@@ -96,5 +96,15 @@ public class ReservationController {
         }
     }
 
+    // 🔹 Réservations appartements d’un utilisateur par ID
+    @GetMapping("/appartements/user/{userId}")
+    public List<ReservationResponseDTO> getReservationsAppartementsByUser(@PathVariable Long userId) {
+        return reservationService.getReservationsAppartementsByUser(userId);
+    }
 
+    // 🔹 Réservations appartements de l’utilisateur connecté
+    @GetMapping("/appartements/me")
+    public List<ReservationResponseDTO> getReservationsAppartementsCurrentUser() {
+        return reservationService.getReservationsAppartementsByCurrentUser();
+    }
 }
