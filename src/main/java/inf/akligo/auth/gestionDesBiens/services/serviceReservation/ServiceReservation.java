@@ -33,6 +33,7 @@ import inf.akligo.auth.gestionDesBiens.requests.ReservationRequestVehi;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
+import inf.akligo.auth.gestionDesBiens.services.emails.EmailService;
 
 @RequiredArgsConstructor
 @Service
@@ -43,6 +44,7 @@ public class ServiceReservation{
     private final UtilisateurRepository utilisateurRepository;
     private final VehiculeRepository vehiculeRepository;
     private final RoleRepository roleRepository;
+    private final EmailService emailService;
 
 
     @Transactional
@@ -93,8 +95,10 @@ public class ServiceReservation{
                 .montant(montant)
                 .utilisateur(utilisateur)
                 .build();
-
-        return reservationRepository.save(reservation);
+        Reservation savedReservation = reservationRepository.save(reservation);
+        // Email + facture PDF
+        emailService.envoyerEmailAvecFacture(utilisateur, savedReservation);
+        return savedReservation;
     
     
     }
@@ -112,17 +116,18 @@ public class ServiceReservation{
                 utilisateurRepository.save(utilisateur);
        }
 }
-
-    @Transactional
+@Transactional
 public ReservationResponseDTO updateReservationStatus(Long reservationId, String nouveauStatutStr) {
-    // Récupérer la réservation
+
     Reservation reservation = reservationRepository.findById(reservationId)
             .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
 
-    // Récupérer l'utilisateur lié à la réservation
     Utilisateurs utilisateur = reservation.getUtilisateur();
 
-    // Convertir le String en enum
+    // 🔴 Ancien statut
+    StatutDeReservation ancienStatut = reservation.getStatut();
+
+    // Conversion String → Enum
     StatutDeReservation nouveauStatut;
     try {
         nouveauStatut = StatutDeReservation.valueOf(nouveauStatutStr.toUpperCase());
@@ -130,11 +135,60 @@ public ReservationResponseDTO updateReservationStatus(Long reservationId, String
         throw new RuntimeException("Statut invalide");
     }
 
-    // Mettre à jour le statut
+    // Si le statut est identique → rien à faire
+    if (ancienStatut == nouveauStatut) {
+        return mapToDto(reservation);
+    }
+
+    // Mise à jour
     reservation.setStatut(nouveauStatut);
     reservationRepository.save(reservation);
 
-    // Retourner le DTO
+    // 📧 Envoi email selon le statut
+    emailService.envoyerEmailChangementStatut(utilisateur, reservation, ancienStatut);
+
+    return mapToDto(reservation);
+}
+
+    //@Transactional
+
+// public ReservationResponseDTO updateReservationStatus(Long reservationId, String nouveauStatutStr) {
+//     // Récupérer la réservation
+//     Reservation reservation = reservationRepository.findById(reservationId)
+//             .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+
+//     // Récupérer l'utilisateur lié à la réservation
+//     Utilisateurs utilisateur = reservation.getUtilisateur();
+
+//     // Convertir le String en enum
+//     StatutDeReservation nouveauStatut;
+//     try {
+//         nouveauStatut = StatutDeReservation.valueOf(nouveauStatutStr.toUpperCase());
+//     } catch (IllegalArgumentException e) {
+//         throw new RuntimeException("Statut invalide");
+//     }
+
+//     // Mettre à jour le statut
+//     reservation.setStatut(nouveauStatut);
+//     reservationRepository.save(reservation);
+
+//     // Retourner le DTO
+//     return ReservationResponseDTO.builder()
+//             .id(reservation.getId())
+//             .dateDebut(reservation.getDateDebut())
+//             .dateFin(reservation.getDateFin())
+//             .montant(reservation.getMontant())
+//             .appartementNom(reservation.getAppartement().getNom())
+//             .appartementAdresse(reservation.getAppartement().getAdresse())
+//             .utilisateurNom(utilisateur.getNom())
+//             .utilisateurPrenoms(utilisateur.getPrenoms())
+//             .statut(reservation.getStatut().name())
+//             .build();
+//         }
+
+private ReservationResponseDTO mapToDto(Reservation reservation) {
+    Utilisateurs utilisateur = reservation.getUtilisateur();
+
     return ReservationResponseDTO.builder()
             .id(reservation.getId())
             .dateDebut(reservation.getDateDebut())
@@ -146,7 +200,8 @@ public ReservationResponseDTO updateReservationStatus(Long reservationId, String
             .utilisateurPrenoms(utilisateur.getPrenoms())
             .statut(reservation.getStatut().name())
             .build();
-        }
+}
+
 
 
 @Transactional
@@ -199,6 +254,9 @@ public ReservationResponseVehi createReservationVehicule(ReservationRequestVehi 
 
     Reservation savedReservation = reservationRepository.save(reservation);
 
+    // 📧 Email + facture PDF spécifique véhicule
+    emailService.envoyerEmailAvecFactureVehicule(utilisateur, savedReservation);
+
     // 🎁 Retourner le DTO de réponse
     return ReservationResponseVehi.builder()
             .id(savedReservation.getId())
@@ -213,30 +271,48 @@ public ReservationResponseVehi createReservationVehicule(ReservationRequestVehi 
 }
 
 @Transactional
-public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, String nouveauStatut){
+public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, String nouveauStatutStr){
         // Recuperer la reservation
         Reservation reservation = reservationRepository.findById(reservartionId)
                 .orElseThrow(() -> new RuntimeException("Reservation non trouver"));
 
-                    // Récupérer l'utilisateur lié à la réservation
+        // Récupérer l'utilisateur lié à la réservation
         Utilisateurs utilisateur = reservation.getUtilisateur();
 
-        // Convertir le String en enum
+        // 🔴 Ancien statut
+        StatutDeReservation ancienStatut = reservation.getStatut();
 
+        // Convertir le String en enum
         StatutDeReservation nouveau;
         try{
-                nouveau= StatutDeReservation.valueOf(nouveauStatut.toUpperCase());
+                nouveau= StatutDeReservation.valueOf(nouveauStatutStr.toUpperCase());
 
         } catch (IllegalArgumentException e) {
                 throw new RuntimeException("Statut invalide");
-    }
-        // mettre a jour le statut
+        }
 
+        // Si le statut est identique → rien à faire
+        if (ancienStatut == nouveau) {
+            return ReservationResponseVehi.builder()
+                    .id(reservation.getId())
+                    .dateDebut(reservation.getDateDebut())
+                    .dateFin(reservation.getDateFin())
+                    .vehiculeMarque(reservation.getVehicule().getMarque())
+                    .vehiculeImmatriculation(reservation.getVehicule().getImmatriculation())
+                    .utilisateurNom(utilisateur.getNom())
+                    .utilisateurPrenoms(utilisateur.getPrenoms())
+                    .statut(reservation.getStatut().name())
+                    .build();
+        }
+
+        // mettre a jour le statut
         reservation.setStatut(nouveau);
         reservationRepository.save(reservation);
 
-        // retourner le DTO
+        // 📧 Envoi email spécifique véhicule selon le statut
+        emailService.envoyerEmailChangementStatutVehicule(utilisateur, reservation, ancienStatut);
 
+        // retourner le DTO
         return ReservationResponseVehi.builder()
                         .id(reservation.getId())
                         .dateDebut(reservation.getDateDebut())

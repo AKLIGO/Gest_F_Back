@@ -49,6 +49,7 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
         .cors(withDefaults())
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/error").permitAll() // Autoriser l'accès à la page d'erreur Spring Boot
             .requestMatchers("/public/**").permitAll() // Autoriser aussi toutes les requêtes sous /public
             .requestMatchers("/auth/users/me").hasRole("USER") // Protection pour cette route spécifique
             .requestMatchers("/api/appartement/").hasAnyRole("PROPRIETAIRE", "ADMIN")
@@ -80,6 +81,10 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers("/api/reservations/vehicule/mes-reservations-vehicules").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
             .requestMatchers("/api/auth/**").permitAll() // Autoriser toutes les requêtes sous /auth
             .requestMatchers("/auth/**").permitAll() // Autoriser les requêtes sans préfixe /api
+            .requestMatchers(
+                    "/api/proprio/vehicule/**",
+                    "/api/proprio/appartement/**"   
+                ).permitAll()// toutes les routes sous /api/proprietaire sont accessibles sans authentification
             .requestMatchers("/api/image/file/**").permitAll()
             .requestMatchers("/api/appartement/list").permitAll()
             .requestMatchers("/api/appartement/lists").permitAll()

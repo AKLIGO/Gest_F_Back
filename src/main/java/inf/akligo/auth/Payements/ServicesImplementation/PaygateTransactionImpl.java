@@ -52,27 +52,49 @@ public class PaygateTransactionImpl implements PaygateService {
 
     @Override
     public DepositResponseDto depotTransactionPaygates(ClientRequestDto data) {
-        // Construire la requête
-        DepositRequestDto depositRequestDto = createDepositRequest(data);
+        try {
+            System.out.println("🔵 Début de la transaction pour : " + data.getPhone());
+            
+            // Construire la requête
+            DepositRequestDto depositRequestDto = createDepositRequest(data);
+            System.out.println("✅ Requête construite : " + depositRequestDto.getIdentifier());
 
-        // Envoyer la requête et récupérer la réponse
-        DepositResponseDto depositResponseDto = sendDepositRequest(depositRequestDto);
+            // Envoyer la requête et récupérer la réponse
+            DepositResponseDto depositResponseDto = sendDepositRequest(depositRequestDto);
+            System.out.println("✅ Réponse reçue : " + depositResponseDto.getTx_reference());
 
-        // Sauvegarder la transaction initiale dans la base
-        saveInitialDeposit(depositRequestDto, depositResponseDto);
+            // Sauvegarder la transaction initiale dans la base
+            saveInitialDeposit(depositRequestDto, depositResponseDto);
+            System.out.println("✅ Transaction sauvegardée en base");
 
-        return depositResponseDto;
+            return depositResponseDto;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Erreur dans depotTransactionPaygates : " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Erreur lors de l'initialisation de la transaction : " + e.getMessage(), e);
+        }
     }
 
     private DepositRequestDto createDepositRequest(ClientRequestDto clientRequestDto) {
-        return DepositRequestDto.builder()
-                .amount(clientRequestDto.getAmount())
-                .auth_token(AUTH_TOKEN)
-                .phone_number(clientRequestDto.getPhone())
-                .description("test application de Location")
-                .identifier(UUID.randomUUID().toString())
-                .network(clientRequestDto.getNetwork())
-                .build();
+        try {
+            System.out.println("📝 Création de la requête de dépôt...");
+            System.out.println("   - Téléphone: " + clientRequestDto.getPhone());
+            System.out.println("   - Montant: " + clientRequestDto.getAmount());
+            System.out.println("   - Réseau: " + clientRequestDto.getNetwork());
+            
+            return DepositRequestDto.builder()
+                    .amount(clientRequestDto.getAmount())
+                    .auth_token(AUTH_TOKEN)
+                    .phone_number(clientRequestDto.getPhone())
+                    .description("test application de Location")
+                    .identifier(UUID.randomUUID().toString())
+                    .network(clientRequestDto.getNetwork())
+                    .build();
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors de la création de la requête : " + e.getMessage());
+            throw new RuntimeException("Erreur lors de la création de la requête de dépôt", e);
+        }
     }
 
     private DepositResponseDto sendDepositRequest(DepositRequestDto depositRequestDto) {
@@ -116,6 +138,8 @@ public class PaygateTransactionImpl implements PaygateService {
     @Override
     public CheckResponseDTO checkTransactionStatus(CheckTransactionDto data) {
         try {
+            System.out.println("🔍 Vérification du statut de la transaction: " + data.getTx_reference());
+            
             Mono<CheckResponseDTO> result = webClient
                     .post()
                     .uri("/status")
@@ -123,16 +147,26 @@ public class PaygateTransactionImpl implements PaygateService {
                     .bodyValue(data)
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError,
-                            res -> Mono.error(new Exception("Erreur client TMoney")))
+                            res -> {
+                                System.err.println("❌ Erreur 4xx lors de la vérification");
+                                return Mono.error(new Exception("Erreur client PayGate"));
+                            })
                     .onStatus(HttpStatusCode::is5xxServerError,
-                            res -> Mono.error(new Exception("Erreur serveur TMoney")))
+                            res -> {
+                                System.err.println("❌ Erreur 5xx lors de la vérification");
+                                return Mono.error(new Exception("Erreur serveur PayGate"));
+                            })
                     .bodyToMono(CheckResponseDTO.class);
 
-            return result.block();
+            CheckResponseDTO response = result.block();
+            System.out.println("✅ Statut vérifié: " + response.getStatus());
+            return response;
 
         } catch (WebClientResponseException e) {
+            System.err.println("❌ Erreur HTTP: " + e.getStatusCode());
             throw new RuntimeException("Erreur HTTP : " + e.getStatusCode() + " - " + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
+            System.err.println("❌ Erreur inattendue: " + e.getMessage());
             throw new RuntimeException("Erreur inattendue lors de la vérification du statut de la transaction", e);
         }
     }

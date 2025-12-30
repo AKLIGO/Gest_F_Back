@@ -1,4 +1,4 @@
-package inf.akligo.auth.gestionDesBiens.services.serviceCompteImpl;
+package inf.akligo.auth.gestionDesBiens.services.serviceImmeuble;
 
 import inf.akligo.auth.authConfiguration.entity.Utilisateurs;
 import inf.akligo.auth.gestionDesBiens.entity.Immeuble;

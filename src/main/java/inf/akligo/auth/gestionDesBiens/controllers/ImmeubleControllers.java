@@ -1,7 +1,7 @@
 package inf.akligo.auth.gestionDesBiens.controllers;
 import inf.akligo.auth.gestionDesBiens.entity.Immeuble;
 import org.springframework.security.core.context.SecurityContextHolder;
-import inf.akligo.auth.gestionDesBiens.services.serviceCompteImpl.ServiceImmeuble;
+import inf.akligo.auth.gestionDesBiens.services.serviceImmeuble.ServiceImmeuble;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

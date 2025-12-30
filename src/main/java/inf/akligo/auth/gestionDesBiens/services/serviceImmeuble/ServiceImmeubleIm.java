@@ -1,4 +1,4 @@
-package inf.akligo.auth.gestionDesBiens.services.serviceCompteImpl;
+package inf.akligo.auth.gestionDesBiens.services.serviceImmeuble;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import inf.akligo.auth.securityConfig.security.JwtService;
@@ -18,7 +18,7 @@ import inf.akligo.auth.gestionDesBiens.entity.Immeuble;
 import inf.akligo.auth.gestionDesBiens.entity.Appartement;
 import inf.akligo.auth.gestionDesBiens.repository.ImmeubleRepository;
 import inf.akligo.auth.gestionDesBiens.repository.AppartementRepository;
-import inf.akligo.auth.gestionDesBiens.services.serviceCompteImpl.ServiceImmeuble;
+import inf.akligo.auth.gestionDesBiens.services.serviceImmeuble.ServiceImmeuble;
 
 
 

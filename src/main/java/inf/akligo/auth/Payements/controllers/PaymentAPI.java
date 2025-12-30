@@ -16,8 +16,15 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentAPI {
 
     PaygateService paygateService;
+    
+    @GetMapping(path = "/test")
+    public String test(){
+        return "✅ PayGate API est opérationnelle";
+    }
+    
     @PostMapping(path = "/deposit")
     public DepositResponseDto payment(@RequestBody ClientRequestDto entity){
+        System.out.println("📥 Requête reçue: " + entity.getPhone() + " - " + entity.getAmount() + " - " + entity.getNetwork());
         return this.paygateService.depotTransactionPaygates(entity);
     }
 
