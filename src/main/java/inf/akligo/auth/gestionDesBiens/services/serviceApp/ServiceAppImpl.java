@@ -240,6 +240,34 @@ public Appartement autoriserAffichage(Long id, boolean publie) {
         appartement.setPublie(publie);
         return appartementRepository.save(appartement);
     }
+
+
+ @Override
+public List<AppartementDTO> rechercherAppartements(
+        String adresse,
+        Double prixMin,
+        Double prixMax
+) {
+    return appartementRepository
+            .rechercherAppartementsDisponibles(adresse, prixMin, prixMax)
+            .stream()
+            .map(this::convertToDTO)
+            .toList();
+}
+
+
+
+    @Override
+    public List<AppartementDTO> rechercherParPrix(
+        Double prixMin,
+        Double prixMax
+    )   {
+        return appartementRepository
+            .findByPublieTrueAndPrixBetween(prixMin, prixMax)
+            .stream()
+            .map(this::convertToDTO)
+            .toList();
+}
    
 
 }

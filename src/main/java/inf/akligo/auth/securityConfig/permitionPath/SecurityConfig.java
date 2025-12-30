@@ -62,7 +62,12 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers("/api/vehicules/list").permitAll()
             .requestMatchers("/api/vehicules/lists").permitAll()
             .requestMatchers("/api/contact").permitAll()
-            .requestMatchers("/api/paiement/ajouter").permitAll()
+            .requestMatchers("/api/paiement/**").permitAll()
+            .requestMatchers(
+                "/api/appartement/recherche/**",
+                "/api/appartement/recherche/prix",
+                "/api/vehicules/recherche/**"
+            ).permitAll()
             .requestMatchers("/api/auth/modifierUtilisateur/{id}").permitAll()
             .requestMatchers("/api/payGate/**").permitAll()
             .requestMatchers("/api/vehicules/proprietaire/**").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
@@ -74,6 +79,7 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers("/api/reservations/vehicule/proprietaire/**").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
             .requestMatchers("/api/reservations/vehicule/mes-reservations-vehicules").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
             .requestMatchers("/api/auth/**").permitAll() // Autoriser toutes les requêtes sous /auth
+            .requestMatchers("/auth/**").permitAll() // Autoriser les requêtes sans préfixe /api
             .requestMatchers("/api/image/file/**").permitAll()
             .requestMatchers("/api/appartement/list").permitAll()
             .requestMatchers("/api/appartement/lists").permitAll()

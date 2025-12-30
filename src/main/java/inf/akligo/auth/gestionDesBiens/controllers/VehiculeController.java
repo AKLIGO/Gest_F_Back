@@ -5,6 +5,8 @@ import inf.akligo.auth.gestionDesBiens.services.serviceVehicules.ServiceVehicule
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import inf.akligo.auth.gestionDesBiens.requests.VehiculeDTO;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.MediaType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -118,5 +120,21 @@ public class VehiculeController {
     public ResponseEntity<Vehicules> publierVehicule(@PathVariable Long id, @RequestParam boolean publie) {
         Vehicules updated = serviceVehicule.autoriserAffichage(id, publie);
         return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * 17-12-2025 fonction de recherche
+     */
+
+    @PreAuthorize("permitAll()")
+    @GetMapping(value = "/recherche", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<VehiculeDTO>> rechercherVehicules(
+            @RequestParam(required = false) String marque,
+            @RequestParam(required = false) Double prixMin,
+            @RequestParam(required = false) Double prixMax
+    )   {
+        return ResponseEntity.ok(
+                serviceVehicule.rechercherVehicules(marque, prixMin, prixMax)
+        );
     }
 }

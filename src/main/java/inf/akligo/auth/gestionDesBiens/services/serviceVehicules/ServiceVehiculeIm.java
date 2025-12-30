@@ -32,7 +32,7 @@ public class ServiceVehiculeIm implements ServiceVehicule{
 
     private final VehiculeRepository vehiculeRepository;
     private final UtilisateurRepository utilisateurRepository;
-    private final RoleRepository roleRepository;
+    
     @Override
     @Transactional
     public Vehicules addVehicules(Vehicules vehicules){
@@ -227,13 +227,36 @@ public List<VehiculeDTO> getVehiculesByCurrentUser() {
     return getVehiculesByProprietaire(proprietaire.getId());
 }
 
-@Override
+    @Override
     public Vehicules autoriserAffichage(Long id, boolean publie) {
-        Vehicules vehicule = vehiculeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Véhicule non trouvé"));
-        vehicule.setPublie(publie);
-        return vehiculeRepository.save(vehicule);
-        }   
+            Vehicules vehicule = vehiculeRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Véhicule non trouvé"));
+            vehicule.setPublie(publie);
+            return vehiculeRepository.save(vehicule);
+        }  
+
+    @Override
+    public List<VehiculeDTO> rechercherVehicules(
+            String marque,
+            Double prixMin,
+            Double prixMax
+    ) {
+
+        // Valeurs par défaut
+        String marqueRecherche = (marque == null) ? "" : marque;
+        double min = (prixMin == null) ? 0 : prixMin;
+        double max = (prixMax == null) ? Double.MAX_VALUE : prixMax;
+
+        List<Vehicules> vehicules =
+                vehiculeRepository.findByPublieTrueAndMarqueContainingIgnoreCaseAndPrixBetween(
+                        marqueRecherche, min, max
+                );
+
+        return vehicules.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
 
 
 }

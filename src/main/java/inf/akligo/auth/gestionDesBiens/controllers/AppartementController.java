@@ -116,5 +116,40 @@ public class AppartementController {
         return ResponseEntity.ok(updated);
     }
 
+    //16-12-2025
+
+    @PreAuthorize("permitAll()")
+    @GetMapping(value = "/recherche", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AppartementDTO>> rechercherAppartements(
+            @RequestParam(required = false, defaultValue = "") String adresse,
+            @RequestParam(required = false) Double prixMin,
+            @RequestParam(required = false) Double prixMax
+    ) {
+        log.info("Recherche appartements | adresse={}, prixMin={}, prixMax={}",
+                adresse, prixMin, prixMax);
+
+        List<AppartementDTO> resultats =
+                serviceApp.rechercherAppartements(adresse, prixMin, prixMax);
+
+        return ResponseEntity.ok(resultats);
+    }
+
+
+    @PreAuthorize("permitAll()")
+    @GetMapping(value = "/recherche/prix", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AppartementDTO>> rechercherParPrix(
+            @RequestParam Double prixMin,
+            @RequestParam Double prixMax
+) {
+        log.info("Recherche appartements par prix | prixMin={}, prixMax={}",
+                prixMin, prixMax);
+
+        List<AppartementDTO> resultats =
+                serviceApp.rechercherParPrix(prixMin, prixMax);
+
+        return ResponseEntity.ok(resultats);
+    }
+
+
 
 }

@@ -20,4 +20,14 @@ public interface VehiculeRepository extends JpaRepository<Vehicules, Long>{
     Optional<Vehicules> findByImmatriculation(String immatriculation);
     List<Vehicules> findByPublieTrue();
 
+    //17-12-2025
+
+      List<Vehicules> findByPublieTrueAndMarqueContainingIgnoreCaseAndPrixBetween(
+            String marque,
+            double prixMin,
+            double prixMax
+    );
+
+    
+
 }

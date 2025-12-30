@@ -25,5 +25,10 @@ public interface ServiceVehicule{
     List<VehiculeDTO> getVehiculesByCurrentUser();
 
     Vehicules autoriserAffichage(Long id, boolean publie);
+    List<VehiculeDTO> rechercherVehicules(
+            String marque,
+            Double prixMin,
+            Double prixMax
+    );
 
 }

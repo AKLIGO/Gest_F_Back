@@ -25,5 +25,19 @@ public interface ServiceApp{
     List<AppartementDTO> getAppartementsByProprietaire(Long proprietaireId);
     List<AppartementDTO> getAppartementsByCurrentUser();
 
+    // 🔍💰 NOUVELLES MÉTHODES DE RECHERCHE (publie = true)
+    
+    //16-12-2025
+    List<AppartementDTO> rechercherAppartements(
+            String adresse,
+            Double prixMin,
+            Double prixMax
+    );
+
+    List<AppartementDTO> rechercherParPrix(
+            Double prixMin,
+            Double prixMax
+    );
+
 
 }

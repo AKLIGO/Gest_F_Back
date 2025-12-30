@@ -40,6 +40,7 @@ public class PaimentController{
     */
 
     @PostMapping("/ajouter")
+    // @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_PROPRIETAIRE', 'ROLE_ADMIN')")
     public ResponseEntity<Paiement> ajouterPaiement(
             @RequestParam Long reservationId,
             @RequestParam double montant,
