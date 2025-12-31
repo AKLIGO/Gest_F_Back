@@ -36,8 +36,11 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:4200"));
-        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE"));
+        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
@@ -81,6 +84,7 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers("/api/reservations/vehicule/mes-reservations-vehicules").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
             .requestMatchers("/api/auth/**").permitAll() // Autoriser toutes les requêtes sous /auth
             .requestMatchers("/auth/**").permitAll() // Autoriser les requêtes sans préfixe /api
+            .requestMatchers("/api/password-reset/**").permitAll() // Autoriser les endpoints de réinitialisation de mot de passe
             .requestMatchers(
                     "/api/proprio/vehicule/**",
                     "/api/proprio/appartement/**"   
