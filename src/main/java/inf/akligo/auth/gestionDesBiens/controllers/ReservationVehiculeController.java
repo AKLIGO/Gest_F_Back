@@ -3,6 +3,7 @@ package inf.akligo.auth.gestionDesBiens.controllers;
 import inf.akligo.auth.gestionDesBiens.entity.Reservation;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationRequestVehi;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseVehi;
+import inf.akligo.auth.gestionDesBiens.requests.CancellationInfoDTO;
 import inf.akligo.auth.gestionDesBiens.services.serviceReservation.ServiceReservation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -87,5 +88,68 @@ public class ReservationVehiculeController {
     @GetMapping("/vehicules/mes")
     public List<ReservationResponseVehi> getReservationsVehiculesCurrentUserP() {
         return serviceReservation.getReservationsVehiculesByCurrentUser();
+    }
+
+    /**
+     * Vérifie si une réservation de véhicule peut être annulée (dans les 24h)
+     * @param reservationId L'ID de la réservation
+     * @return true si l'annulation est possible
+     */
+    @GetMapping("/{id}/can-cancel")
+    public ResponseEntity<Boolean> canCancelReservationVehicule(@PathVariable("id") Long reservationId) {
+        try {
+            boolean canCancel = serviceReservation.canCurrentUserCancelReservationVehicule(reservationId);
+            return ResponseEntity.ok(canCancel);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(false);
+        }
+    }
+
+    /**
+     * Obtient les informations détaillées sur la possibilité d'annulation d'une réservation de véhicule
+     * @param reservationId L'ID de la réservation
+     * @return Détails sur la possibilité d'annulation
+     */
+    @GetMapping("/{id}/cancellation-info")
+    public ResponseEntity<CancellationInfoDTO> getCancellationInfoVehicule(@PathVariable("id") Long reservationId) {
+        try {
+            CancellationInfoDTO info = serviceReservation.getCancellationInfoVehicule(reservationId);
+            return ResponseEntity.ok(info);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(
+                CancellationInfoDTO.builder()
+                    .reservationId(reservationId)
+                    .canCancel(false)
+                    .message(e.getMessage())
+                    .hoursRemaining(0L)
+                    .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(
+                CancellationInfoDTO.builder()
+                    .reservationId(reservationId)
+                    .canCancel(false)
+                    .message("Erreur lors de la récupération des informations")
+                    .hoursRemaining(0L)
+                    .build()
+            );
+        }
+    }
+
+    /**
+     * Annule une réservation de véhicule (dans les 24h après sa création)
+     * @param reservationId L'ID de la réservation à annuler
+     * @return La réservation annulée
+     */
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelReservationVehicule(@PathVariable("id") Long reservationId) {
+        try {
+            ReservationResponseVehi reservation = serviceReservation.cancelReservationVehicule(reservationId);
+            return ResponseEntity.ok(reservation);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur lors de l'annulation de la réservation de véhicule");
+        }
     }
 }

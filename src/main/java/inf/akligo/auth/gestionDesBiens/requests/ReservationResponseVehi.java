@@ -21,6 +21,7 @@ public class ReservationResponseVehi{
     private String vehiculeImmatriculation;// immatriculation du vehicule
     private String utilisateurNom;    // Nom de l'utilisateur
     private String utilisateurPrenoms;// Prénoms de l'utilisateur
-    private String statut; 
+    private String statut;
+    private Double montant;           // Montant de la réservation
 
 }

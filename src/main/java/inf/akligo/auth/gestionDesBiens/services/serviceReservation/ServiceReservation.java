@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import inf.akligo.auth.authConfiguration.repository.UtilisateurRepository;
 import java.time.temporal.ChronoUnit;
+import java.time.LocalDateTime;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseVehi;
 import inf.akligo.auth.gestionDesBiens.repository.ReservationRepository;
 import inf.akligo.auth.gestionDesBiens.repository.AppartementRepository;
@@ -28,6 +29,7 @@ import inf.akligo.auth.gestionDesBiens.requests.ReservationRequest;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseDTO;
 import inf.akligo.auth.authConfiguration.repository.RoleRepository;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationRequestVehi;
+import inf.akligo.auth.gestionDesBiens.requests.CancellationInfoDTO;
 // import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseVehi;
 
 import org.springframework.stereotype.Service;
@@ -267,6 +269,7 @@ public ReservationResponseVehi createReservationVehicule(ReservationRequestVehi 
             .utilisateurNom(savedReservation.getUtilisateur().getNom())
             .utilisateurPrenoms(savedReservation.getUtilisateur().getPrenoms())
             .statut(savedReservation.getStatut().name())
+            .montant(savedReservation.getMontant())
             .build();
 }
 
@@ -302,6 +305,7 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
                     .utilisateurNom(utilisateur.getNom())
                     .utilisateurPrenoms(utilisateur.getPrenoms())
                     .statut(reservation.getStatut().name())
+                    .montant(reservation.getMontant())
                     .build();
         }
 
@@ -322,6 +326,7 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
                         .utilisateurNom(utilisateur.getNom())
                         .utilisateurPrenoms(utilisateur.getPrenoms())
                         .statut(reservation.getStatut().name())
+                        .montant(reservation.getMontant())
                         .build();
                         
         }
@@ -396,6 +401,7 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
                                 .utilisateurNom(res.getUtilisateur().getNom())
                                 .utilisateurPrenoms(res.getUtilisateur().getPrenoms())
                                 .statut(res.getStatut().name())
+                                .montant(res.getMontant())
                                 .build()
                         ).collect(Collectors.toList());
         }
@@ -512,6 +518,7 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
                             .utilisateurNom(reservation.getUtilisateur() != null ? reservation.getUtilisateur().getNom() : null)
                             .utilisateurPrenoms(reservation.getUtilisateur() != null ? reservation.getUtilisateur().getPrenoms() : null)
                             .statut(reservation.getStatut() != null ? reservation.getStatut().name() : null)
+                            .montant(reservation.getMontant())
                             .build())
                     .collect(Collectors.toList());
         }
@@ -555,6 +562,7 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
                         .utilisateurNom(user.getNom())
                         .utilisateurPrenoms(user.getPrenoms())
                         .statut(res.getStatut() != null ? res.getStatut().name() : null)
+                        .montant(res.getMontant())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -576,6 +584,7 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
                         .utilisateurNom(reservation.getUtilisateur() != null ? reservation.getUtilisateur().getNom() : null)
                         .utilisateurPrenoms(reservation.getUtilisateur() != null ? reservation.getUtilisateur().getPrenoms() : null)
                         .statut(reservation.getStatut() != null ? reservation.getStatut().name() : null)
+                        .montant(reservation.getMontant())
                         .build())
                 .collect(Collectors.toList());
     }
@@ -617,6 +626,343 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Vérifie si une réservation peut être annulée (dans les 24h après sa création)
+     * @param reservationId L'ID de la réservation
+     * @return true si l'annulation est possible, false sinon
+     */
+    public boolean canCancelReservation(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+        
+        // Vérifier si la réservation est dans un statut annulable
+        if (reservation.getStatut() == StatutDeReservation.ANNULEE || 
+            reservation.getStatut() == StatutDeReservation.TERMINER) {
+            return false;
+        }
+        
+        // Vérifier si moins de 24h se sont écoulées depuis la création
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createdAt = reservation.getCreatedAt();
+        long heuresDiff = ChronoUnit.HOURS.between(createdAt, now);
+        
+        return heuresDiff < 24;
+    }
+
+    /**
+     * Annule une réservation si elle est éligible (créée il y a moins de 24h)
+     * @param reservationId L'ID de la réservation à annuler
+     * @return La réservation annulée
+     */
+    @Transactional
+    public ReservationResponseDTO cancelReservation(Long reservationId) {
+        // Récupérer l'utilisateur connecté
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Utilisateurs utilisateur = utilisateurRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        
+        // Récupérer la réservation
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+        
+        // Vérifier que l'utilisateur est bien le propriétaire de la réservation
+        if (!reservation.getUtilisateur().getId().equals(utilisateur.getId())) {
+            throw new RuntimeException("Vous n'êtes pas autorisé à annuler cette réservation");
+        }
+        
+        // Vérifier si la réservation est déjà annulée ou terminée
+        if (reservation.getStatut() == StatutDeReservation.ANNULEE) {
+            throw new RuntimeException("Cette réservation est déjà annulée");
+        }
+        
+        if (reservation.getStatut() == StatutDeReservation.TERMINER) {
+            throw new RuntimeException("Cette réservation est terminée et ne peut plus être annulée");
+        }
+        
+        // Vérifier la limite de 24h
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createdAt = reservation.getCreatedAt();
+        long heuresDiff = ChronoUnit.HOURS.between(createdAt, now);
+        
+        if (heuresDiff >= 24) {
+            throw new RuntimeException("Le délai d'annulation de 24h est dépassé. Vous ne pouvez plus annuler cette réservation.");
+        }
+        
+        // Conserver l'ancien statut pour l'email
+        StatutDeReservation ancienStatut = reservation.getStatut();
+        
+        // Annuler la réservation
+        reservation.setStatut(StatutDeReservation.ANNULEE);
+        reservationRepository.save(reservation);
+        
+        // Envoyer un email de confirmation d'annulation
+        emailService.envoyerEmailChangementStatut(utilisateur, reservation, ancienStatut);
+        
+        return mapToDto(reservation);
+    }
+
+    /**
+     * Vérifie si une réservation peut être annulée pour l'utilisateur connecté
+     * @param reservationId L'ID de la réservation
+     * @return Objet contenant les infos sur la possibilité d'annulation
+     */
+    public boolean canCurrentUserCancelReservation(Long reservationId) {
+        // Récupérer l'utilisateur connecté
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Utilisateurs utilisateur = utilisateurRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        
+        // Récupérer la réservation
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+        
+        // Vérifier que l'utilisateur est bien le propriétaire
+        if (!reservation.getUtilisateur().getId().equals(utilisateur.getId())) {
+            return false;
+        }
+        
+        return canCancelReservation(reservationId);
+    }
+
+    /**
+     * Obtient les informations détaillées sur la possibilité d'annulation d'une réservation
+     * @param reservationId L'ID de la réservation
+     * @return DTO avec les détails sur la possibilité d'annulation
+     */
+    public CancellationInfoDTO getCancellationInfo(Long reservationId) {
+        // Récupérer l'utilisateur connecté
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Utilisateurs utilisateur = utilisateurRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        
+        // Récupérer la réservation
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+        
+        CancellationInfoDTO.CancellationInfoDTOBuilder builder = CancellationInfoDTO.builder()
+                .reservationId(reservationId);
+        
+        // Vérifier que l'utilisateur est bien le propriétaire
+        if (!reservation.getUtilisateur().getId().equals(utilisateur.getId())) {
+            return builder
+                    .canCancel(false)
+                    .message("Vous n'êtes pas autorisé à annuler cette réservation")
+                    .hoursRemaining(0L)
+                    .build();
+        }
+        
+        // Vérifier le statut
+        if (reservation.getStatut() == StatutDeReservation.ANNULEE) {
+            return builder
+                    .canCancel(false)
+                    .message("Cette réservation est déjà annulée")
+                    .hoursRemaining(0L)
+                    .build();
+        }
+        
+        if (reservation.getStatut() == StatutDeReservation.TERMINER) {
+            return builder
+                    .canCancel(false)
+                    .message("Cette réservation est terminée et ne peut plus être annulée")
+                    .hoursRemaining(0L)
+                    .build();
+        }
+        
+        // Calculer le temps restant
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createdAt = reservation.getCreatedAt();
+        long heuresDiff = ChronoUnit.HOURS.between(createdAt, now);
+        long heuresRestantes = 24 - heuresDiff;
+        
+        if (heuresDiff >= 24) {
+            return builder
+                    .canCancel(false)
+                    .message("Le délai d'annulation de 24h est dépassé")
+                    .hoursRemaining(0L)
+                    .build();
+        }
+        
+        return builder
+                .canCancel(true)
+                .message("Vous pouvez annuler cette réservation")
+                .hoursRemaining(heuresRestantes)
+                .build();
+    }
+
+    /**
+     * Annule une réservation de véhicule si elle est éligible (créée il y a moins de 24h)
+     * @param reservationId L'ID de la réservation à annuler
+     * @return La réservation annulée
+     */
+    @Transactional
+    public ReservationResponseVehi cancelReservationVehicule(Long reservationId) {
+        // Récupérer l'utilisateur connecté
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Utilisateurs utilisateur = utilisateurRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        
+        // Récupérer la réservation
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+        
+        // Vérifier que c'est bien une réservation de véhicule
+        if (reservation.getVehicule() == null) {
+            throw new RuntimeException("Cette réservation n'est pas une réservation de véhicule");
+        }
+        
+        // Vérifier que l'utilisateur est bien le propriétaire de la réservation
+        if (!reservation.getUtilisateur().getId().equals(utilisateur.getId())) {
+            throw new RuntimeException("Vous n'êtes pas autorisé à annuler cette réservation");
+        }
+        
+        // Vérifier si la réservation est déjà annulée ou terminée
+        if (reservation.getStatut() == StatutDeReservation.ANNULEE) {
+            throw new RuntimeException("Cette réservation est déjà annulée");
+        }
+        
+        if (reservation.getStatut() == StatutDeReservation.TERMINER) {
+            throw new RuntimeException("Cette réservation est terminée et ne peut plus être annulée");
+        }
+        
+        // Vérifier la limite de 24h
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createdAt = reservation.getCreatedAt();
+        long heuresDiff = ChronoUnit.HOURS.between(createdAt, now);
+        
+        if (heuresDiff >= 24) {
+            throw new RuntimeException("Le délai d'annulation de 24h est dépassé. Vous ne pouvez plus annuler cette réservation.");
+        }
+        
+        // Conserver l'ancien statut pour l'email
+        StatutDeReservation ancienStatut = reservation.getStatut();
+        
+        // Annuler la réservation
+        reservation.setStatut(StatutDeReservation.ANNULEE);
+        reservationRepository.save(reservation);
+        
+        // Envoyer un email de confirmation d'annulation
+        emailService.envoyerEmailChangementStatut(utilisateur, reservation, ancienStatut);
+        
+        return ReservationResponseVehi.builder()
+                .id(reservation.getId())
+                .dateDebut(reservation.getDateDebut())
+                .dateFin(reservation.getDateFin())
+                .vehiculeMarque(reservation.getVehicule().getMarque())
+                .vehiculeImmatriculation(reservation.getVehicule().getImmatriculation())
+                .utilisateurNom(reservation.getUtilisateur().getNom())
+                .utilisateurPrenoms(reservation.getUtilisateur().getPrenoms())
+                .statut(reservation.getStatut().name())
+                .montant(reservation.getMontant())
+                .build();
+    }
+
+    /**
+     * Vérifie si une réservation de véhicule peut être annulée pour l'utilisateur connecté
+     * @param reservationId L'ID de la réservation
+     * @return true si l'annulation est possible
+     */
+    public boolean canCurrentUserCancelReservationVehicule(Long reservationId) {
+        // Récupérer l'utilisateur connecté
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Utilisateurs utilisateur = utilisateurRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        
+        // Récupérer la réservation
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+        
+        // Vérifier que c'est une réservation de véhicule
+        if (reservation.getVehicule() == null) {
+            return false;
+        }
+        
+        // Vérifier que l'utilisateur est bien le propriétaire
+        if (!reservation.getUtilisateur().getId().equals(utilisateur.getId())) {
+            return false;
+        }
+        
+        return canCancelReservation(reservationId);
+    }
+
+    /**
+     * Obtient les informations détaillées sur la possibilité d'annulation d'une réservation de véhicule
+     * @param reservationId L'ID de la réservation
+     * @return DTO avec les détails sur la possibilité d'annulation
+     */
+    public CancellationInfoDTO getCancellationInfoVehicule(Long reservationId) {
+        // Récupérer l'utilisateur connecté
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        Utilisateurs utilisateur = utilisateurRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        
+        // Récupérer la réservation
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
+        
+        CancellationInfoDTO.CancellationInfoDTOBuilder builder = CancellationInfoDTO.builder()
+                .reservationId(reservationId);
+        
+        // Vérifier que c'est une réservation de véhicule
+        if (reservation.getVehicule() == null) {
+            return builder
+                    .canCancel(false)
+                    .message("Cette réservation n'est pas une réservation de véhicule")
+                    .hoursRemaining(0L)
+                    .build();
+        }
+        
+        // Vérifier que l'utilisateur est bien le propriétaire
+        if (!reservation.getUtilisateur().getId().equals(utilisateur.getId())) {
+            return builder
+                    .canCancel(false)
+                    .message("Vous n'êtes pas autorisé à annuler cette réservation")
+                    .hoursRemaining(0L)
+                    .build();
+        }
+        
+        // Vérifier le statut
+        if (reservation.getStatut() == StatutDeReservation.ANNULEE) {
+            return builder
+                    .canCancel(false)
+                    .message("Cette réservation est déjà annulée")
+                    .hoursRemaining(0L)
+                    .build();
+        }
+        
+        if (reservation.getStatut() == StatutDeReservation.TERMINER) {
+            return builder
+                    .canCancel(false)
+                    .message("Cette réservation est terminée et ne peut plus être annulée")
+                    .hoursRemaining(0L)
+                    .build();
+        }
+        
+        // Calculer le temps restant
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createdAt = reservation.getCreatedAt();
+        long heuresDiff = ChronoUnit.HOURS.between(createdAt, now);
+        long heuresRestantes = 24 - heuresDiff;
+        
+        if (heuresDiff >= 24) {
+            return builder
+                    .canCancel(false)
+                    .message("Le délai d'annulation de 24h est dépassé")
+                    .hoursRemaining(0L)
+                    .build();
+        }
+        
+        return builder
+                .canCancel(true)
+                .message("Vous pouvez annuler cette réservation de véhicule")
+                .hoursRemaining(heuresRestantes)
+                .build();
+    }
 
 
 }
