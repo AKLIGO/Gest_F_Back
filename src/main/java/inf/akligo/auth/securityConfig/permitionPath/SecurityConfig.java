@@ -59,13 +59,15 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers("/api/immeubles").hasAnyRole("PROPRIETAIRE", "ADMIN")
             .requestMatchers("/api/image/").hasAnyRole("PROPRIETAIRE", "ADMIN")
             .requestMatchers("/api/image/ajoutImageTovehicule").hasAnyRole("PROPRIETAIRE", "ADMIN")
-            .requestMatchers("/api/paiement/supprimer/{id}").hasAnyRole("PROPRIETAIRE", "ADMIN")
             .requestMatchers("/api/vehicules/ajouter").hasAnyRole("PROPRIETAIRE", "ADMIN")
             .requestMatchers("/api/vehicules/supprimer/{id}").hasAnyRole("PROPRIETAIRE", "ADMIN")
             .requestMatchers("/api/vehicules/modifier/{id}").hasAnyRole("PROPRIETAIRE", "ADMIN")
             .requestMatchers("/api/vehicules/list").permitAll()
             .requestMatchers("/api/vehicules/lists").permitAll()
             .requestMatchers("/api/contact").permitAll()
+            .requestMatchers("/api/paiement/export/excel").hasAnyRole("PROPRIETAIRE", "ADMIN", "CLIENT")
+            .requestMatchers("/api/paiement/reservation/*/export/excel").hasAnyRole("PROPRIETAIRE", "ADMIN", "CLIENT")
+            .requestMatchers("/api/paiement/supprimer/{id}").hasAnyRole("PROPRIETAIRE", "ADMIN")
             .requestMatchers("/api/paiement/**").permitAll()
             .requestMatchers(
                 "/api/appartement/recherche/**",
@@ -80,8 +82,12 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             .requestMatchers("/api/appartement/mes-appartements").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
             .requestMatchers("/api/reservations/proprietaire/**").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
             .requestMatchers("/api/reservations/mes-reservations").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
+            .requestMatchers("/api/reservations/appartements/export/excel").hasAnyRole("PROPRIETAIRE", "ADMIN", "CLIENT")
+            .requestMatchers("/api/reservations/appartements/me/export/excel").hasAnyRole("PROPRIETAIRE", "ADMIN", "CLIENT")
             .requestMatchers("/api/reservations/vehicule/proprietaire/**").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
             .requestMatchers("/api/reservations/vehicule/mes-reservations-vehicules").hasAnyRole("PROPRIETAIRE", "ADMIN", "USER")
+            .requestMatchers("/api/reservations/vehicule/vehicules/export/excel").hasAnyRole("PROPRIETAIRE", "ADMIN", "CLIENT")
+            .requestMatchers("/api/reservations/vehicule/vehicules/me/export/excel").hasAnyRole("PROPRIETAIRE", "ADMIN", "CLIENT")
             .requestMatchers("/api/auth/**").permitAll() // Autoriser toutes les requêtes sous /auth
             .requestMatchers("/auth/**").permitAll() // Autoriser les requêtes sans préfixe /api
             .requestMatchers("/api/password-reset/**").permitAll() // Autoriser les endpoints de réinitialisation de mot de passe

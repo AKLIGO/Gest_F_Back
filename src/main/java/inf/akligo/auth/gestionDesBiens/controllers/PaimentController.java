@@ -5,6 +5,7 @@ import inf.akligo.auth.gestionDesBiens.enumerateurs.ModePaiement;
 import org.springframework.security.core.context.SecurityContextHolder;
 import inf.akligo.auth.gestionDesBiens.entity.Paiement;
 import inf.akligo.auth.gestionDesBiens.services.servicePaiement.PaiementService;
+import inf.akligo.auth.gestionDesBiens.services.excel.ExcelExportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +31,7 @@ import org.springframework.http.HttpStatus;
 public class PaimentController{
 
  private final PaiementService paiementService;
+ private final ExcelExportService excelExportService;
 
   /**
      * Ajouter un paiement pour une réservation
@@ -76,5 +78,50 @@ public class PaimentController{
     @DeleteMapping("/supprimer/{id}")
     public void supprimerPaiement(@PathVariable Long id) {
         paiementService.supprimerPaiement(id);
+    }
+
+    /**
+     * Exporte tous les paiements en fichier Excel
+     * @return Fichier Excel avec la liste de tous les paiements
+     */
+    @GetMapping("/export/excel")
+    public ResponseEntity<byte[]> exportAllPaiementsToExcel() {
+        try {
+            List<PaiementDTO> paiements = paiementService.getAllPaiements();
+            byte[] excelFile = excelExportService.exportAllPaiements(paiements);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "tous_les_paiements.xlsx");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelFile);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * Exporte les paiements d'une réservation spécifique en fichier Excel
+     * @param reservationId L'ID de la réservation
+     * @return Fichier Excel avec la liste des paiements de la réservation
+     */
+    @GetMapping("/reservation/{reservationId}/export/excel")
+    public ResponseEntity<byte[]> exportPaiementsByReservationToExcel(@PathVariable Long reservationId) {
+        try {
+            List<PaiementDTO> paiements = paiementService.getPaiementByReservation(reservationId);
+            byte[] excelFile = excelExportService.exportPaiementsByReservation(paiements, reservationId);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "paiements_reservation_" + reservationId + ".xlsx");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelFile);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 }

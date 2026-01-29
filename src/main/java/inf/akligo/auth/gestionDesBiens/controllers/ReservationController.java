@@ -1,11 +1,16 @@
 package inf.akligo.auth.gestionDesBiens.controllers;
 import inf.akligo.auth.gestionDesBiens.services.serviceReservation.ServiceReservation;
+import inf.akligo.auth.gestionDesBiens.services.excel.ExcelExportService;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationRequest;
+import inf.akligo.auth.gestionDesBiens.requests.ReservationRequestVehi;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseDTO;
+import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseVehi;
 import inf.akligo.auth.gestionDesBiens.requests.CancellationInfoDTO;
 import inf.akligo.auth.gestionDesBiens.entity.Reservation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -20,6 +25,7 @@ import org.springframework.http.HttpStatus;
 public class ReservationController {
 
     private final ServiceReservation reservationService;
+    private final ExcelExportService excelExportService;
 
     @PostMapping
     public ResponseEntity<Reservation> createReservation(@RequestBody ReservationRequest request) {
@@ -170,5 +176,73 @@ public class ReservationController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erreur lors de l'annulation de la réservation");
         }
+    }
+
+    /**
+     * Exporte toutes les réservations d'appartements en fichier Excel
+     * @return Fichier Excel avec la liste des réservations
+     */
+    @GetMapping("/appartements/export/excel")
+    public ResponseEntity<byte[]> exportReservationsAppartementsToExcel() {
+        try {
+            List<ReservationResponseDTO> reservations = reservationService.getReservationsAppartements();
+            byte[] excelFile = excelExportService.exportReservationsAppartements(reservations);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "reservations_appartements.xlsx");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelFile);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * Exporte les réservations d'appartements de l'utilisateur connecté en fichier Excel
+     * @return Fichier Excel avec la liste des réservations
+     */
+    @GetMapping("/appartements/me/export/excel")
+    public ResponseEntity<byte[]> exportMyReservationsAppartementsToExcel() {
+        try {
+            List<ReservationResponseDTO> reservations = reservationService.getReservationsAppartementsByCurrentUser();
+            byte[] excelFile = excelExportService.exportReservationsAppartements(reservations);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "mes_reservations_appartements.xlsx");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelFile);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * Met à jour une réservation d'appartement existante (dates, montant recalculé automatiquement)
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ReservationResponseDTO> updateReservation(
+            @PathVariable("id") Long reservationId,
+            @RequestBody @Valid ReservationRequest request) {
+        
+        ReservationResponseDTO updatedReservation = reservationService.updateReservation(reservationId, request);
+        return ResponseEntity.ok(updatedReservation);
+    }
+
+    /**
+     * Met à jour une réservation de véhicule existante (dates, montant recalculé automatiquement)
+     */
+    @PutMapping("/vehicule/{id}")
+    public ResponseEntity<ReservationResponseVehi> updateReservationVehicule(
+            @PathVariable("id") Long reservationId,
+            @RequestBody @Valid ReservationRequestVehi request) {
+        
+        ReservationResponseVehi updatedReservation = reservationService.updateReservationVehicule(reservationId, request);
+        return ResponseEntity.ok(updatedReservation);
     }
 }

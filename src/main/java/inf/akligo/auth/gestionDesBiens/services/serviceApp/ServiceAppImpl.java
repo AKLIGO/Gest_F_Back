@@ -65,6 +65,7 @@ public class ServiceAppImpl implements ServiceApp{
             appartement.setAdresse(appartementUpd.getAdresse());
             appartement.setNbrDePieces(appartementUpd.getNbrDePieces());
             appartement.setDescription(appartementUpd.getDescription());
+            appartement.setPrix(appartementUpd.getPrix());
             appartement.setStatut(appartementUpd.getStatut());
             appartement.setLocalisation(appartementUpd.getLocalisation());
             appartement.setType(appartementUpd.getType());

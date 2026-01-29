@@ -5,7 +5,10 @@ import inf.akligo.auth.gestionDesBiens.requests.ReservationRequestVehi;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseVehi;
 import inf.akligo.auth.gestionDesBiens.requests.CancellationInfoDTO;
 import inf.akligo.auth.gestionDesBiens.services.serviceReservation.ServiceReservation;
+import inf.akligo.auth.gestionDesBiens.services.excel.ExcelExportService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
@@ -17,6 +20,7 @@ import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseVehi;
 public class ReservationVehiculeController {
 
     private final ServiceReservation serviceReservation;
+    private final ExcelExportService excelExportService;
 
     // Créer une nouvelle réservation pour un véhicule
     @PostMapping
@@ -32,6 +36,18 @@ public class ReservationVehiculeController {
             @RequestParam String nouveauStatut
     ) {
         ReservationResponseVehi response = serviceReservation.updateReservationStatutVehi(reservationId, nouveauStatut);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Met à jour une réservation de véhicule (dates, montant recalculé automatiquement)
+     */
+    @PutMapping("/{reservationId}")
+    public ResponseEntity<ReservationResponseVehi> updateReservationVehicule(
+            @PathVariable Long reservationId,
+            @RequestBody ReservationRequestVehi request
+    ) {
+        ReservationResponseVehi response = serviceReservation.updateReservationVehicule(reservationId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -150,6 +166,50 @@ public class ReservationVehiculeController {
             return ResponseEntity.status(400).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erreur lors de l'annulation de la réservation de véhicule");
+        }
+    }
+
+    /**
+     * Exporte toutes les réservations de véhicules en fichier Excel
+     * @return Fichier Excel avec la liste des réservations
+     */
+    @GetMapping("/vehicules/export/excel")
+    public ResponseEntity<byte[]> exportReservationsVehiculesToExcel() {
+        try {
+            List<ReservationResponseVehi> reservations = serviceReservation.getReservationsVehicules();
+            byte[] excelFile = excelExportService.exportReservationsVehicules(reservations);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "reservations_vehicules.xlsx");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelFile);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * Exporte les réservations de véhicules de l'utilisateur connecté en fichier Excel
+     * @return Fichier Excel avec la liste des réservations
+     */
+    @GetMapping("/vehicules/me/export/excel")
+    public ResponseEntity<byte[]> exportMyReservationsVehiculesToExcel() {
+        try {
+            List<ReservationResponseVehi> reservations = serviceReservation.getReservationsVehiculesByCurrentUser();
+            byte[] excelFile = excelExportService.exportReservationsVehicules(reservations);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment", "mes_reservations_vehicules.xlsx");
+            
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelFile);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
         }
     }
 }

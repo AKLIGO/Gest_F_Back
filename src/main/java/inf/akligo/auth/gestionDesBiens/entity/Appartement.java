@@ -83,6 +83,7 @@ public class Appartement{
     @ManyToOne
     @JoinColumn(name="immeuble_id")
     @JsonBackReference("immeuble-appartement")
+    @JsonIgnore
     @ToString.Exclude
     private Immeuble immeuble;
 
@@ -101,5 +102,7 @@ public class Appartement{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="proprietaire_id")
     @JsonBackReference("proprietaire-appartement")
+    @JsonIgnore
+    @ToString.Exclude
     private Utilisateurs proprietaire;
 }

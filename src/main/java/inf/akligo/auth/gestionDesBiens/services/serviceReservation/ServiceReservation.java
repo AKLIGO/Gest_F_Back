@@ -964,5 +964,94 @@ public ReservationResponseVehi updateReservationStatutVehi(Long reservartionId, 
                 .build();
     }
 
+    /**
+     * Met à jour une réservation existante (dates, montant recalculé automatiquement)
+     */
+    @Transactional
+    public ReservationResponseDTO updateReservation(Long reservationId, ReservationRequest request) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée avec l'ID: " + reservationId));
+
+        boolean datesModifiees = false;
+
+        // Mettre à jour les dates si elles sont fournies
+        if (request.getDateDebut() != null) {
+            reservation.setDateDebut(request.getDateDebut());
+            datesModifiees = true;
+        }
+        if (request.getDateFin() != null) {
+            reservation.setDateFin(request.getDateFin());
+            datesModifiees = true;
+        }
+        
+        // Recalculer le montant si les dates ont été modifiées
+        if (datesModifiees && reservation.getAppartement() != null) {
+            long jours = ChronoUnit.DAYS.between(reservation.getDateDebut(), reservation.getDateFin());
+            if (jours <= 0) {
+                throw new RuntimeException("La date de fin doit être postérieure à la date de début");
+            }
+            double nouveauMontant = jours * reservation.getAppartement().getPrix();
+            reservation.setMontant(nouveauMontant);
+        }
+
+        // Sauvegarder les modifications
+        Reservation updatedReservation = reservationRepository.save(reservation);
+        
+        return mapToDto(updatedReservation);
+    }
+
+    /**
+     * Met à jour une réservation de véhicule existante (dates uniquement, montant recalculé automatiquement)
+     * Note : Le véhicule ne peut pas être modifié
+     */
+    @Transactional
+    public ReservationResponseVehi updateReservationVehicule(Long reservationId, ReservationRequestVehi request) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Réservation non trouvée avec l'ID: " + reservationId));
+
+        // Vérifier que la réservation a un véhicule
+        if (reservation.getVehicule() == null) {
+            throw new RuntimeException("Cette réservation n'est pas liée à un véhicule");
+        }
+
+        boolean datesModifiees = false;
+
+        // Mettre à jour les dates si elles sont fournies
+        if (request.getDateDebut() != null) {
+            reservation.setDateDebut(request.getDateDebut());
+            datesModifiees = true;
+        }
+        if (request.getDateFin() != null) {
+            reservation.setDateFin(request.getDateFin());
+            datesModifiees = true;
+        }
+        
+        // Recalculer le montant si les dates ont été modifiées
+        if (datesModifiees) {
+            long jours = ChronoUnit.DAYS.between(reservation.getDateDebut(), reservation.getDateFin());
+            if (jours <= 0) {
+                throw new RuntimeException("La date de fin doit être postérieure à la date de début");
+            }
+            double nouveauMontant = jours * reservation.getVehicule().getPrix();
+            reservation.setMontant(nouveauMontant);
+        }
+
+        // Sauvegarder les modifications
+        Reservation updatedReservation = reservationRepository.save(reservation);
+        
+        // Retourner le DTO
+        return ReservationResponseVehi.builder()
+                .id(updatedReservation.getId())
+                .dateDebut(updatedReservation.getDateDebut())
+                .dateFin(updatedReservation.getDateFin())
+                .vehiculeMarque(updatedReservation.getVehicule().getMarque())
+                .vehiculeImmatriculation(updatedReservation.getVehicule().getImmatriculation())
+                .utilisateurNom(updatedReservation.getUtilisateur().getNom())
+                .utilisateurPrenoms(updatedReservation.getUtilisateur().getPrenoms())
+                .statut(updatedReservation.getStatut().name())
+                .montant(updatedReservation.getMontant())
+                .build();
+    }
+
 
 }
