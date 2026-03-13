@@ -261,4 +261,40 @@ public class ServiceCompteImpl implements ServiceCompte, UserDetailsService {
     
 }
 
+    /**
+     * Bloquer un compte utilisateur
+     */
+    @Override
+    public void bloquerCompte(Long userId) {
+        Utilisateurs utilisateur = utilisateurRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'id : " + userId));
+        
+        utilisateur.setAccountLocked(true);
+        utilisateurRepository.save(utilisateur);
+    }
+
+    /**
+     * Débloquer un compte utilisateur
+     */
+    @Override
+    public void debloquerCompte(Long userId) {
+        Utilisateurs utilisateur = utilisateurRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'id : " + userId));
+        
+        utilisateur.setAccountLocked(false);
+        utilisateurRepository.save(utilisateur);
+    }
+
+    /**
+     * Activer un compte utilisateur
+     */
+    @Override
+    public void activerCompte(Long userId) {
+        Utilisateurs utilisateur = utilisateurRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec l'id : "
+                        + userId));
+        utilisateur.setEnabled(true);
+        utilisateurRepository.save(utilisateur);
+    }
+
 }

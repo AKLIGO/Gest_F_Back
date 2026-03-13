@@ -178,6 +178,45 @@ public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
     }
 }
 
+/**
+ * Bloquer un compte utilisateur
+ */
+@PutMapping("/bloquer/{userId}")
+public ResponseEntity<?> bloquerCompte(@PathVariable Long userId) {
+    try {
+        serviceCompteImpl.bloquerCompte(userId);
+        return ResponseEntity.ok("Compte bloqué avec succès");
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Erreur: " + e.getMessage());
+    }
+}
+
+/**
+ * Débloquer un compte utilisateur
+ */
+@PutMapping("/debloquer/{userId}")
+public ResponseEntity<?> debloquerCompte(@PathVariable Long userId) {
+    try {
+        serviceCompteImpl.debloquerCompte(userId);
+        return ResponseEntity.ok("Compte débloqué avec succès");
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Erreur: " + e.getMessage());
+    }
+}
+
+@PutMapping("/activer/{userId}")
+public ResponseEntity<?> activerCompte(@PathVariable Long userId) {
+    try {
+        serviceCompteImpl.activerCompte(userId);
+        return ResponseEntity.ok("Compte activé avec succès");
+    } catch (RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Erreur: " + e.getMessage());
+    }
+}
+
 
 
 

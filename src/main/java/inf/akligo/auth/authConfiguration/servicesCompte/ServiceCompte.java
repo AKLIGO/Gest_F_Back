@@ -23,6 +23,14 @@ public interface ServiceCompte{
 
     Utilisateurs modifierUtilisateur(Utilisateurs utilisateurDetails, Long id);
 
+    // bloquer un compte utilisateur
+    void bloquerCompte(Long userId);
+
+    // débloquer un compte utilisateur
+    void debloquerCompte(Long userId);
+
+    void activerCompte(Long userId);
+
 
 
 
