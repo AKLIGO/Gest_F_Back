@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import inf.akligo.auth.authConfiguration.repository.UtilisateurRepository;
 import java.time.temporal.ChronoUnit;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import inf.akligo.auth.gestionDesBiens.requests.ReservationResponseVehi;
 import inf.akligo.auth.gestionDesBiens.repository.ReservationRepository;
@@ -68,6 +69,9 @@ public class ServiceReservation{
         // Vérifier si l’appartement existe
         Appartement appartement = appartementRepository.findById(request.getAppartementId())
                 .orElseThrow(() -> new RuntimeException("Appartement introuvable"));
+
+        if (request.getDateDebut().isBefore(LocalDate.now()))
+            throw new RuntimeException("La date de début ne peut pas être dans le passé");
 
         long jours = ChronoUnit.DAYS.between(request.getDateDebut(), request.getDateFin());
         if(jours<=0) throw new RuntimeException("Date invalide");
@@ -223,6 +227,9 @@ public ReservationResponseVehi createReservationVehicule(ReservationRequestVehi 
             .orElseThrow(() -> new RuntimeException("Véhicule introuvable"));
 
     // 📅 Vérifier la validité des dates
+    if (request.getDateDebut().isBefore(LocalDate.now()))
+        throw new RuntimeException("La date de début ne peut pas être dans le passé");
+
     long jours = ChronoUnit.DAYS.between(request.getDateDebut(), request.getDateFin());
     if (jours <= 0) throw new RuntimeException("La date de fin doit être postérieure à la date de début");
 
