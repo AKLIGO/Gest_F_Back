@@ -104,6 +104,14 @@ public class ServiceReservation{
         Reservation savedReservation = reservationRepository.save(reservation);
         // Email + facture PDF
         emailService.envoyerEmailAvecFacture(utilisateur, savedReservation);
+        String proprietaireEmail = appartement.getProprietaire() != null ? appartement.getProprietaire().getEmail() : null;
+        String proprietaireNom = appartement.getProprietaire() != null ? appartement.getProprietaire().getNom() : null;
+        emailService.envoyerEmailNotificationProprietaireAppartement(
+            proprietaireEmail,
+            proprietaireNom,
+            utilisateur,
+            savedReservation
+        );
         return savedReservation;
     
     
@@ -265,6 +273,14 @@ public ReservationResponseVehi createReservationVehicule(ReservationRequestVehi 
 
     // 📧 Email + facture PDF spécifique véhicule
     emailService.envoyerEmailAvecFactureVehicule(utilisateur, savedReservation);
+        String proprietaireEmail = vehicule.getProprietaire() != null ? vehicule.getProprietaire().getEmail() : null;
+        String proprietaireNom = vehicule.getProprietaire() != null ? vehicule.getProprietaire().getNom() : null;
+        emailService.envoyerEmailNotificationProprietaireVehicule(
+            proprietaireEmail,
+            proprietaireNom,
+            utilisateur,
+            savedReservation
+        );
 
     // 🎁 Retourner le DTO de réponse
     return ReservationResponseVehi.builder()

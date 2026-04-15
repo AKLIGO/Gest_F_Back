@@ -111,6 +111,56 @@ public void envoyerEmailSimple(String to, String sujet, String contenu) {
     mailSender.send(message);
 }
 
+@Async
+public void envoyerEmailNotificationProprietaireAppartement(String proprietaireEmail,
+                                                            String proprietaireNom,
+                                                            Utilisateurs client,
+                                                            Reservation reservation) {
+    if (proprietaireEmail == null || proprietaireEmail.isBlank()) {
+        return;
+    }
+
+    String nomProprietaire = proprietaireNom != null ? proprietaireNom : "Proprietaire";
+
+    String sujet = "Nouvelle reservation sur votre appartement";
+    String contenu = "Bonjour " + nomProprietaire + ",\n\n" +
+            "Une nouvelle reservation a ete effectuee sur votre appartement.\n\n" +
+            "Appartement : " + (reservation.getAppartement() != null ? reservation.getAppartement().getNom() : "N/A") + "\n" +
+            "Client : " + (client != null ? client.getNom() + " " + client.getPrenoms() : "N/A") + "\n" +
+            "Periode : du " + reservation.getDateDebut() + " au " + reservation.getDateFin() + "\n" +
+            "Montant : " + reservation.getMontant() + " EUR\n" +
+            "Statut : " + reservation.getStatut() + "\n\n" +
+            "Cordialement,\nL'equipe";
+
+    envoyerEmailSimple(proprietaireEmail, sujet, contenu);
+}
+
+@Async
+public void envoyerEmailNotificationProprietaireVehicule(String proprietaireEmail,
+                                                         String proprietaireNom,
+                                                         Utilisateurs client,
+                                                         Reservation reservation) {
+    if (proprietaireEmail == null || proprietaireEmail.isBlank()) {
+        return;
+    }
+
+    String nomProprietaire = proprietaireNom != null ? proprietaireNom : "Proprietaire";
+
+    String sujet = "Nouvelle reservation sur votre vehicule";
+    String contenu = "Bonjour " + nomProprietaire + ",\n\n" +
+            "Une nouvelle reservation a ete effectuee sur votre vehicule.\n\n" +
+            "Vehicule : " + (reservation.getVehicule() != null
+            ? reservation.getVehicule().getMarque() + " " + reservation.getVehicule().getModele()
+            : "N/A") + "\n" +
+            "Client : " + (client != null ? client.getNom() + " " + client.getPrenoms() : "N/A") + "\n" +
+            "Periode : du " + reservation.getDateDebut() + " au " + reservation.getDateFin() + "\n" +
+            "Montant : " + reservation.getMontant() + " EUR\n" +
+            "Statut : " + reservation.getStatut() + "\n\n" +
+            "Cordialement,\nL'equipe";
+
+    envoyerEmailSimple(proprietaireEmail, sujet, contenu);
+}
+
 // ========== MÉTHODES SPÉCIFIQUES POUR VÉHICULES ==========
 
 @Async

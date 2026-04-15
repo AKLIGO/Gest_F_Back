@@ -36,7 +36,7 @@ public class PdfService {
 
             document.add(new Paragraph(" "));
             document.add(new Paragraph("Montant total : " +
-                    reservation.getMontant() + " €")
+                    reservation.getMontant() + " F CFA")
                     .setBold());
 
             document.add(new Paragraph(" "));
@@ -94,7 +94,7 @@ public class PdfService {
             document.add(new Paragraph("=== MONTANT ===")
                     .setBold());
             document.add(new Paragraph("Montant total : " +
-                    reservation.getMontant() + " €")
+                    reservation.getMontant() + " F CFA")
                     .setBold()
                     .setFontSize(14));
 
