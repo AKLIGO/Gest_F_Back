@@ -10,7 +10,7 @@ import inf.akligo.auth.gestionDesBiens.requests.ImmeubleDTO;
 import java.util.List;
 
 
-@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*") 
+@CrossOrigin(origins = {"http://localhost:4200", "http://10.1.0.254:4200"}, allowedHeaders = "*") 
 @RestController
 @RequestMapping("/api/immeubles")
 

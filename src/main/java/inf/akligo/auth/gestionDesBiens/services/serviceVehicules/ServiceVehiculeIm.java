@@ -16,6 +16,7 @@ import inf.akligo.auth.gestionDesBiens.enumerateurs.TypeVehicule;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -150,6 +151,7 @@ public class ServiceVehiculeIm implements ServiceVehicule{
 
     public VehiculeDTO convertToDTO(Vehicules vehicule) {
     List<ImageDTOVeh> imageDtos = new ArrayList<>();
+    String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
 
     if (vehicule.getImages() != null && !vehicule.getImages().isEmpty()) {
         imageDtos = vehicule.getImages().stream()
@@ -159,7 +161,7 @@ public class ServiceVehiculeIm implements ServiceVehicule{
                         .nomFichier(image.getNomFichier())
                         .typeMime(image.getTypeMime())
                         .vehiculeId(vehicule.getId())
-                        .previewUrl("http://localhost:8082/api/image/file/" + image.getNomFichier())
+                        .previewUrl(baseUrl + "/api/image/file/" + image.getNomFichier())
                         .build())
                 .collect(Collectors.toList());
     }

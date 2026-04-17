@@ -21,7 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.http.HttpStatus;
-@CrossOrigin(origins = "http://localhost:4200") 
+@CrossOrigin(origins = {"http://localhost:4200", "http://10.1.0.254:4200"}) 
 @RestController
 @RequestMapping("/api/facture")
 

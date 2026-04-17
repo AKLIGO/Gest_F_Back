@@ -13,6 +13,7 @@ import inf.akligo.auth.gestionDesBiens.requests.AppartementDTO;
 import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.util.List;
 import java.util.Optional;
 import inf.akligo.auth.authConfiguration.entity.Utilisateurs;
@@ -202,6 +203,7 @@ public List<AppartementDTO> getAppartementsByCurrentUser() {
 
 public AppartementDTO convertToDTO(Appartement appartement) {
     List<ImageDTO> imageDto = new ArrayList<>();
+    String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
 
     if (appartement.getImages() != null && !appartement.getImages().isEmpty()) {
         imageDto = appartement.getImages().stream()
@@ -211,7 +213,7 @@ public AppartementDTO convertToDTO(Appartement appartement) {
                         .nomFichier(image.getNomFichier())
                         .typeMime(image.getTypeMime())
                         .appartementId(appartement.getId())
-                        .previewUrl("http://localhost:8082/api/image/file/" + image.getNomFichier())
+                        .previewUrl(baseUrl + "/api/image/file/" + image.getNomFichier())
                         .build())
                 .collect(Collectors.toList());
     }
